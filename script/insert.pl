@@ -21,6 +21,7 @@ sub main {
             qudo_dbi => \&qudo_dbi,
             qudo_dbi_cached => \&qudo_dbi_cached,
             the_schwartz_simple => \&the_schwartz_simple,
+            the_schwartz_simple_cached => \&the_schwartz_simple_cached,
             the_schwartz => \&the_schwartz,
             the_schwartz_cached => \&the_schwartz_cached,
     });
@@ -94,11 +95,21 @@ sub _the_schwartz {
 }
 
 sub the_schwartz_simple {
+    my $schwartz = _the_schwartz_simple();
+    my $job = $schwartz->insert('Worker::Test' => "test");
+}
+
+my $cached_the_schwartz_simple;
+sub the_schwartz_simple_cached {
+    $cached_the_schwartz_simple ||= _the_schwartz_simple();
+    my $job = $cached_the_schwartz_simple->insert('Worker::Test' => "test");
+}
+
+sub _the_schwartz_simple {
     my $dbh = DBI->connect('dbi:mysql:the_schwartz_test', 'root', '', {
         RaiseError => 1,
         AutoCommit => 1,
     })
         or die DBI->errorstr();
     my $schwartz = TheSchwartz::Simple->new([ $dbh ],);
-    my $job = $schwartz->insert('Worker::Test' => "test");
 }
