@@ -22,6 +22,7 @@ sub main {
             qudo_dbi_cached => \&qudo_dbi_cached,
             the_schwartz_simple => \&the_schwartz_simple,
             the_schwartz => \&the_schwartz,
+            the_schwartz_cached => \&the_schwartz_cached,
     });
 }
 
@@ -72,6 +73,17 @@ sub _qudo_dbi {
 }
 
 sub the_schwartz {
+    my $schwartz = _the_schwartz();
+    my $job = $schwartz->insert('Worker::Test' => "test");
+}
+
+my $cacehd_the_schwartz;
+sub the_schwartz_cached {
+    $cacehd_the_schwartz ||= _the_schwartz();
+    my $job = $cacehd_the_schwartz->insert('Worker::Test' => "test");
+}
+
+sub _the_schwartz {
     my $schwartz = TheSchwartz->new(databases => [ { 
         dsn => 'dbi:mysql:the_schwartz_test',
         user => 'root',
@@ -79,7 +91,6 @@ sub the_schwartz {
         verbose => 1,
     },
     ]);
-    my $job = $schwartz->insert('Worker::Test' => "test");
 }
 
 sub the_schwartz_simple {
