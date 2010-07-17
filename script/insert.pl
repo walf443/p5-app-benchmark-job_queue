@@ -52,12 +52,12 @@ sub qudo_dbi {
 sub the_schwartz {
     my $schwartz = TheSchwartz->new(databases => [ { 
         dsn => 'dbi:mysql:the_schwartz_test',
-        username => 'root',
+        user => 'root',
         password => '',
         verbose => 1,
     },
     ]);
-    $schwartz->insert('Worker::Test' => "test");
+    my $job = $schwartz->insert('Worker::Test' => "test");
 }
 
 sub the_schwartz_simple {
@@ -66,6 +66,6 @@ sub the_schwartz_simple {
         AutoCommit => 1,
     })
         or die DBI->errorstr();
-    my $schwartz = TheSchwartz::Simple->new(databases => [ $dbh ],);
-    $schwartz->insert('Worker::Test' => "test");
+    my $schwartz = TheSchwartz::Simple->new([ $dbh ],);
+    my $job = $schwartz->insert('Worker::Test' => "test");
 }
