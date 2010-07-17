@@ -12,6 +12,9 @@ use TheSchwartz;
 use Data::ObjectDriver::Driver::DBI;
 use TheSchwartz::Simple;
 
+# TODO: use Test::mysqld
+#       autosetup schema
+
 main(@ARGV); exit;
 
 sub main {
@@ -113,3 +116,4 @@ sub _the_schwartz_simple {
         or die DBI->errorstr();
     my $schwartz = TheSchwartz::Simple->new([ $dbh ],);
 }
+
