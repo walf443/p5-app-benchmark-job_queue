@@ -17,6 +17,7 @@ main(@ARGV); exit;
 sub main {
     Benchmark::cmpthese(1000, +{
             qudo_skinny => \&qudo_skinny,
+            qudo_skinny_cached => \&qudo_skinny_cached,
             qudo_dbi => \&qudo_dbi,
             the_schwartz_simple => \&the_schwartz_simple,
             the_schwartz => \&the_schwartz,
@@ -24,6 +25,18 @@ sub main {
 }
 
 sub qudo_skinny {
+    my $qudo = _qudo_skinny();
+
+    $qudo->enqueue('Worker::Test', { arg => 'test' });
+}
+
+my $cached_qudo_skinny;
+sub qudo_skinny_cached {
+    $cached_qudo_skinny ||= _qudo_skinny();
+    $cached_qudo_skinny->enqueue('Worker::Test', { arg => 'test' });
+}
+
+sub _qudo_skinny {
     my $qudo = Qudo->new(
         driver_class => 'Skinny',
         databases    => [+{
@@ -32,8 +45,6 @@ sub qudo_skinny {
             password => '',
         }],
     );
-
-    $qudo->enqueue('Worker::Test', { arg => 'test' });
 }
 
 sub qudo_dbi {
