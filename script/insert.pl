@@ -19,6 +19,7 @@ sub main {
             qudo_skinny => \&qudo_skinny,
             qudo_skinny_cached => \&qudo_skinny_cached,
             qudo_dbi => \&qudo_dbi,
+            qudo_dbi_cached => \&qudo_dbi_cached,
             the_schwartz_simple => \&the_schwartz_simple,
             the_schwartz => \&the_schwartz,
     });
@@ -48,6 +49,18 @@ sub _qudo_skinny {
 }
 
 sub qudo_dbi {
+    my $qudo = _qudo_dbi();
+
+    $qudo->enqueue('Worker::Test', { arg => 'test' });
+}
+
+my $cached_qudo_dbi;
+sub qudo_dbi_cached {
+    $cached_qudo_dbi ||= _qudo_dbi();
+    $cached_qudo_dbi->enqueue('Worker::Test', { arg => 'test' });
+}
+
+sub _qudo_dbi {
     my $qudo = Qudo->new(
         driver_class => 'DBI',
         databases    => [+{
@@ -56,8 +69,6 @@ sub qudo_dbi {
             password => '',
         }],
     );
-
-    $qudo->enqueue('Worker::Test', { arg => 'test' });
 }
 
 sub the_schwartz {
