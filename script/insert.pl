@@ -37,24 +37,28 @@ sub main {
     if ( $INC{"Qudo.pm"} ) {
         $switch_of->{qudo_skinny} = \&qudo_skinny;
         $switch_of->{qudo_skinny_cached} = \&qudo_skinny_cached;
+        qudo_skinny(); # run for setup database.
     } else {
         warn "skipped qudo_skinny, qudo_skinny_cached";
     }
     if ( $INC{"Qudo/Driver/DBI.pm"} ) {
         $switch_of->{qudo_dbi} = \&qudo_dbi;
         $switch_of->{qudo_dbi_cached} = \&qudo_dbi_cached;
+        qudo_dbi(); # run for setup database.
     } else {
         warn "skipped qudo_dbi, qudo_dbi_cached";
     }
     if ( $INC{"TheSchwartz.pm"} ) {
         $switch_of->{the_schwartz} = \&the_schwartz;
         $switch_of->{the_schwartz_cached} = \&the_schwartz_cached;
+        the_schwartz(); # run for setup database.
     } else {
         warn "skipped the_schwartz, the_schwartz_cached";
     }
     if ( $INC{"TheSchwartz/Simple.pm"} ) {
         $switch_of->{the_schwartz_simple} = \&the_schwartz_simple;
         $switch_of->{the_schwartz_simple_cached} = \&the_schwartz_simple_cached;
+        the_schwartz_simple(); # run for setup database.
     } else {
         warn "skipped the_schwartz_simple, the_schwartz_simple_cached";
     }
