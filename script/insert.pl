@@ -49,6 +49,7 @@ sub main {
         $switch_of->{the_schwartz_simple} = \&the_schwartz_simple;
         $switch_of->{the_schwartz_simple_cached} = \&the_schwartz_simple_cached;
     } else {
+        warn "skipped the_schwartz_simple, the_schwartz_simple_cached";
     }
     Benchmark::cmpthese(1000, $switch_of);
 }
