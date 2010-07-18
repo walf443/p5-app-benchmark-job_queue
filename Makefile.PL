@@ -5,7 +5,8 @@ name 'App-Benchmark-JobQueue';
 all_from 'lib/App/Benchmark/JobQueue.pm';
 readme_from 'lib/App/Benchmark/JobQueue.pm';
 
-# requires '';
+requires 'Test::mysqld';
+requires 'Benchmark';
 
 tests 't/*.t';
 author_tests 'xt';
