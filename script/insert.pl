@@ -4,12 +4,15 @@ use warnings;
 use strict;
 use warnings;
 use Benchmark;
-use Qudo;
-use Qudo::Test;
-use Qudo::Driver::DBI;
-use TheSchwartz;
-use Data::ObjectDriver::Driver::DBI;
-use TheSchwartz::Simple;
+
+eval {
+    use Qudo;
+    use Qudo::Test;
+    use Qudo::Driver::DBI;
+    use TheSchwartz;
+    use Data::ObjectDriver::Driver::DBI;
+    use TheSchwartz::Simple;
+};
 
 # TODO: use Test::mysqld
 #       autosetup schema
@@ -17,16 +20,32 @@ use TheSchwartz::Simple;
 main(@ARGV); exit;
 
 sub main {
-    Benchmark::cmpthese(1000, +{
-            qudo_skinny => \&qudo_skinny,
-            qudo_skinny_cached => \&qudo_skinny_cached,
-            qudo_dbi => \&qudo_dbi,
-            qudo_dbi_cached => \&qudo_dbi_cached,
-            the_schwartz_simple => \&the_schwartz_simple,
-            the_schwartz_simple_cached => \&the_schwartz_simple_cached,
-            the_schwartz => \&the_schwartz,
-            the_schwartz_cached => \&the_schwartz_cached,
-    });
+    my $switch_of = +{
+    };
+    if ( $INC{"Qudo.pm"} ) {
+        $switch_of->{qudo_skinny} = \&qudo_skinny;
+        $switch_of->{qudo_skinny_cached} = \&qudo_skinny_cached;
+    } else {
+        warn "skipped qudo_skinny, qudo_skinny_cached";
+    }
+    if ( $INC{"Qudo/Driver/DBI.pm"} ) {
+        $switch_of->{qudo_dbi} = \&qudo_dbi;
+        $switch_of->{qudo_dbi_cached} = \&qudo_dbi_cached;
+    } else {
+        warn "skipped qudo_dbi, qudo_dbi_cached";
+    }
+    if ( $INC{"TheSchwartz.pm"} ) {
+        $switch_of->{the_schwartz} = \&the_schwartz;
+        $switch_of->{the_schwartz_cached} = \&the_schwartz_cached;
+    } else {
+        warn "skipped the_schwartz, the_schwartz_cached";
+    }
+    if ( $INC{"TheSchwartz/Simple.pm"} ) {
+        $switch_of->{the_schwartz_simple} = \&the_schwartz_simple;
+        $switch_of->{the_schwartz_simple_cached} = \&the_schwartz_simple_cached;
+    } else {
+    }
+    Benchmark::cmpthese(1000, $switch_of);
 }
 
 sub qudo_skinny {
