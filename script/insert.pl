@@ -142,7 +142,12 @@ sub the_schwartz_cached {
     my $job = $cacehd_the_schwartz->insert('Worker::Test' => "test");
 }
 
+my $is_schema_setup_the_schwartz;
 sub _the_schwartz {
+    if ( ! $is_schema_setup_the_schwartz ) {
+        _setup_the_schwartz('the_schwartz');
+        $is_schema_setup_the_schwartz++;
+    }
     my $schwartz = TheSchwartz->new(databases => [ { 
         dsn => $mysqld->dsn(dbname => 'the_schwartz'),
         user => 'root',
@@ -163,7 +168,12 @@ sub the_schwartz_simple_cached {
     my $job = $cached_the_schwartz_simple->insert('Worker::Test' => "test");
 }
 
+my $is_schema_setup_the_schwartz_simple;
 sub _the_schwartz_simple {
+    if ( ! $is_schema_setup_the_schwartz_simple ) {
+        _setup_the_schwartz('the_schwartz_simple');
+        $is_schema_setup_the_schwartz_simple++;
+    }
     my $dbh = DBI->connect(
         $mysqld->dsn(dbname => 'the_schwartz_simple'), 'root', '', {
         RaiseError => 1,
@@ -171,5 +181,31 @@ sub _the_schwartz_simple {
     })
         or die DBI->errorstr();
     my $schwartz = TheSchwartz::Simple->new([ $dbh ],);
+}
+
+sub _setup_the_schwartz {
+    my $database = shift;
+    my $dbh = DBI->connect($mysqld->dsn, 'root', '', { RaiseError => 1, AutoCommit => 1})
+        or die DBI::errstr;
+    $dbh->do(qq{ CREATE DATABASE IF NOT EXISTS $database })
+        or die $dbh->errstr;
+
+    $dbh->do(qq{ USE $database })
+        or die $dbh->errstr;
+
+    open(my $fh, '<', 'the_schwartz.sql')
+        or die $!;
+    my $schema = '';
+    while ( my $line = <$fh> ) {
+        $schema .= $line;
+    }
+    close $fh;
+    for my $sql ( split /;/, $schema ) {
+        $sql =~ s/^\s+$//m;
+        if ( $sql ) {
+            $dbh->do($sql);
+        }
+    }
+
 }
 
