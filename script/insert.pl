@@ -15,8 +15,6 @@ eval {
     use TheSchwartz::Simple;
 };
 
-# TODO: use Test::mysqld
-#       autosetup schema
 my $mysqld = Test::mysqld->new(
     my_cnf => {
         'skip-networking' => '',
