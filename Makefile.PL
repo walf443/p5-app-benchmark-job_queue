@@ -7,6 +7,9 @@ readme_from 'lib/App/Benchmark/JobQueue.pm';
 
 requires 'Test::mysqld';
 requires 'Benchmark';
+requires 'Proc::Guard';
+requires 'Test::TCP';
+requires 'File::Which';
 
 tests 't/*.t';
 author_tests 'xt';
