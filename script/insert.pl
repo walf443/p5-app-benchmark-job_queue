@@ -67,7 +67,12 @@ sub qudo_skinny_cached {
     $cached_qudo_skinny->enqueue('Worker::Test', { arg => 'test' });
 }
 
+my $is_schema_setup_qudo_skinny;
 sub _qudo_skinny {
+    if ( ! $is_schema_setup_qudo_skinny ) {
+        _setup_qudo('qudo_skinny');
+        $is_schema_setup_qudo_skinny++;
+    }
     my $qudo = Qudo->new(
         driver_class => 'Skinny',
         databases    => [+{
@@ -94,19 +99,7 @@ my $is_schema_setup_qudo_dbi;
 sub _qudo_dbi {
     my $dsn = $mysqld->dsn(dbname => 'qudo_dbi');
     if ( ! $is_schema_setup_qudo_dbi ) {
-        my $schema = Qudo::Test::load_schema;
-        my $dbh = DBI->connect($mysqld->dsn, 'root', '', { RaiseError => 1, AutoCommit => 1})
-            or die DBI::errstr;
-        $dbh->do(q{ CREATE DATABASE IF NOT EXISTS qudo_dbi })
-            or die $dbh->errstr;
-
-        $dbh->do(q{ USE qudo_dbi })
-            or die $dbh->errstr;
-
-        for my $sql ( @{ $schema->{'mysql'} } ) {
-            $dbh->do($sql)
-                or die $dbh->errstr;
-        }
+        _setup_qudo('qudo_dbi');
         $is_schema_setup_qudo_dbi++;
     }
 
@@ -118,6 +111,24 @@ sub _qudo_dbi {
             password => '',
         }],
     );
+}
+
+sub _setup_qudo {
+    my $database = shift;
+
+    my $schema = Qudo::Test::load_schema;
+    my $dbh = DBI->connect($mysqld->dsn, 'root', '', { RaiseError => 1, AutoCommit => 1})
+        or die DBI::errstr;
+    $dbh->do(qq{ CREATE DATABASE IF NOT EXISTS $database })
+        or die $dbh->errstr;
+
+    $dbh->do(qq{ USE $database })
+        or die $dbh->errstr;
+
+    for my $sql ( @{ $schema->{'mysql'} } ) {
+        $dbh->do($sql)
+            or die $dbh->errstr;
+    }
 }
 
 sub the_schwartz {
