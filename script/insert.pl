@@ -4,7 +4,6 @@ use warnings;
 use strict;
 use warnings;
 use Benchmark;
-use Object::Container;
 use Qudo;
 use Qudo::Test;
 use Qudo::Driver::DBI;
