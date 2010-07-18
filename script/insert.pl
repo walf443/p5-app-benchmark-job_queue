@@ -5,6 +5,9 @@ use strict;
 use warnings;
 use Benchmark;
 use Test::mysqld;
+use Proc::Guard qw/proc_guard/;
+use File::Which qw/which/;
+use Test::TCP qw/empty_port wait_port/;
 
 eval {
     use Qudo;
@@ -13,6 +16,7 @@ eval {
     use TheSchwartz;
     use Data::ObjectDriver::Driver::DBI;
     use TheSchwartz::Simple;
+    use Gearman::Client;
 };
 
 my $mysqld = Test::mysqld->new(
@@ -21,6 +25,9 @@ my $mysqld = Test::mysqld->new(
     }
 )
     or die "Can't start mysqld: $Test::mysqld::errstr";
+
+my $gearmand_port = empty_port();
+my $gearmand = proc_guard(which('gearmand'), '-p', $gearmand_port);
 
 main(@ARGV); exit;
 
@@ -50,6 +57,13 @@ sub main {
         $switch_of->{the_schwartz_simple_cached} = \&the_schwartz_simple_cached;
     } else {
         warn "skipped the_schwartz_simple, the_schwartz_simple_cached";
+    }
+
+    if ( $INC{"Gearman/Client.pm"} ) {
+        $switch_of->{gearman} = \&gearman;
+        $switch_of->{gearman_cached} = \&gearman_cached;
+    } else {
+        warn "skipped gearman";
     }
     Benchmark::cmpthese(1000, $switch_of);
 }
@@ -206,5 +220,21 @@ sub _setup_the_schwartz {
         }
     }
 
+}
+
+sub gearman {
+    my $client = Gearman::Client->new;
+    $client->job_servers('127.0.0.1:' . $gearmand_port);
+    $client->dispatch_background('Worker::Test', 'test');
+}
+
+my $cached_gearman;
+sub gearman_cached {
+    $cached_gearman ||= do {
+        my $client = Gearman::Client->new;
+        $client->job_servers('127.0.0.1:' . $gearmand_port);
+        $client;
+    };
+    $cached_gearman->dispatch_background('Worker::Test', 'test');
 }
 
