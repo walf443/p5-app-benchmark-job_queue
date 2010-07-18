@@ -4,6 +4,7 @@ use warnings;
 use strict;
 use warnings;
 use Benchmark;
+use Test::mysqld;
 
 eval {
     use Qudo;
@@ -16,6 +17,12 @@ eval {
 
 # TODO: use Test::mysqld
 #       autosetup schema
+my $mysqld = Test::mysqld->new(
+    my_cnf => {
+        'skip-networking' => '',
+    }
+)
+    or die "Can't start mysqld: $Test::mysqld::errstr";
 
 main(@ARGV); exit;
 
@@ -64,7 +71,7 @@ sub _qudo_skinny {
     my $qudo = Qudo->new(
         driver_class => 'Skinny',
         databases    => [+{
-            dsn => 'dbi:mysql:qudo_test',
+            dsn => $mysqld->dsn(dbname => 'qudo_skinny'),
             username => 'root',
             password => '',
         }],
@@ -83,11 +90,30 @@ sub qudo_dbi_cached {
     $cached_qudo_dbi->enqueue('Worker::Test', { arg => 'test' });
 }
 
+my $is_schema_setup_qudo_dbi;
 sub _qudo_dbi {
+    my $dsn = $mysqld->dsn(dbname => 'qudo_dbi');
+    if ( ! $is_schema_setup_qudo_dbi ) {
+        my $schema = Qudo::Test::load_schema;
+        my $dbh = DBI->connect($mysqld->dsn, 'root', '', { RaiseError => 1, AutoCommit => 1})
+            or die DBI::errstr;
+        $dbh->do(q{ CREATE DATABASE IF NOT EXISTS qudo_dbi })
+            or die $dbh->errstr;
+
+        $dbh->do(q{ USE qudo_dbi })
+            or die $dbh->errstr;
+
+        for my $sql ( @{ $schema->{'mysql'} } ) {
+            $dbh->do($sql)
+                or die $dbh->errstr;
+        }
+        $is_schema_setup_qudo_dbi++;
+    }
+
     my $qudo = Qudo->new(
         driver_class => 'DBI',
         databases    => [+{
-            dsn => 'dbi:mysql:qudo_test',
+            dsn => $dsn,
             username => 'root',
             password => '',
         }],
@@ -107,7 +133,7 @@ sub the_schwartz_cached {
 
 sub _the_schwartz {
     my $schwartz = TheSchwartz->new(databases => [ { 
-        dsn => 'dbi:mysql:the_schwartz_test',
+        dsn => $mysqld->dsn(dbname => 'the_schwartz'),
         user => 'root',
         password => '',
         verbose => 1,
@@ -127,7 +153,8 @@ sub the_schwartz_simple_cached {
 }
 
 sub _the_schwartz_simple {
-    my $dbh = DBI->connect('dbi:mysql:the_schwartz_test', 'root', '', {
+    my $dbh = DBI->connect(
+        $mysqld->dsn(dbname => 'the_schwartz_simple'), 'root', '', {
         RaiseError => 1,
         AutoCommit => 1,
     })
