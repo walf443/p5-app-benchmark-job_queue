@@ -17,6 +17,8 @@ eval {
     use Data::ObjectDriver::Driver::DBI;
     use TheSchwartz::Simple;
     use Gearman::Client;
+    use Gearman::XS::Client;
+    use Gearman::XS qw(:constants);
 };
 
 my $mysqld = Test::mysqld->new(
@@ -61,6 +63,12 @@ sub main {
         the_schwartz_simple(); # run for setup database.
     } else {
         warn "skipped the_schwartz_simple, the_schwartz_simple_cached";
+    }
+
+    if ( $INC{'Gearman/XS/Client.pm'} ) {
+        $switch_of->{gearman_xs} = \&gearman_xs;
+    } else {
+        warn "skipped gearman_xs";
     }
 
     if ( $INC{"Gearman/Client.pm"} ) {
@@ -240,5 +248,14 @@ sub gearman_cached {
         $client;
     };
     $cached_gearman->dispatch_background('Worker::Test', 'test');
+}
+
+sub gearman_xs {
+    my $client = Gearman::XS::Client->new;
+    my $ret = $client->add_server('127.0.0.1:' . $gearmand_port);
+    if ( $ret != GEARMAN_SUCCESS ) {
+        die "Can't add job_servers: " . $client->error();
+    }
+    my ($ret2, $job) = $client->do_background('Worker::Test', 'test');
 }
 
